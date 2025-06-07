@@ -1,50 +1,49 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict
 
 app = FastAPI()
 
-# 점수 데이터를 받을 모델
-class GradeInput(BaseModel):
-    score: int
-    credit: int  # 지금은 사용하지 않지만 받아둠
+GRADE_TO_POINTS = {
+    "A+": 4.5,
+    "A": 4.0,
+    "B+": 3.5,
+    "B": 3.0,
+    "C+": 2.5,
+    "C": 2.0,
+    "D+": 1.5,
+    "D": 1.0,
+    "F": 0.0
+}
 
-class GradesRequest(BaseModel):
-    grades: List[GradeInput]
-
-# 변환 결과 모델
-class GradeResult(BaseModel):
-    score: int
+class Course(BaseModel):
+    course_code: str
+    course_name: str
+    credits: int
     grade: str
 
-class GradesResponse(BaseModel):
-    results: List[GradeResult]
+class StudentData(BaseModel):
+    student_id: str
+    name: str
+    courses: List[Course]
 
-# 점수 → 등급 매핑 함수
-def convert_to_grade(score: int) -> str:
-    if score >= 95:
-        return "A+"
-    elif score >= 90:
-        return "A0"
-    elif score >= 85:
-        return "B+"
-    elif score >= 80:
-        return "B0"
-    elif score >= 75:
-        return "C+"
-    elif score >= 70:
-        return "C0"
-    elif score >= 65:
-        return "D+"
-    elif score >= 60:
-        return "D0"
-    else:
-        return "F"
+@app.post("/gpa")
+async def calculate_gpa(data: StudentData):
+    total_points = 0.0
+    total_credits = 0
 
-@app.post("/grades", response_model=GradesResponse)
-def get_grades(data: GradesRequest):
-    results = []
-    for item in data.grades:
-        grade = convert_to_grade(item.score)
-        results.append({"score": item.score, "grade": grade})
-    return {"results": results}
+    for course in data.courses:
+        grade_point = GRADE_TO_POINTS.get(course.grade, 0.0)
+        total_points += grade_point * course.credits
+        total_credits += course.credits
+
+    gpa = round(total_points / total_credits, 2) if total_credits else 0.0
+
+    return {
+        "student_summary": {
+            "student_id": data.student_id,
+            "name": data.name,
+            "gpa": gpa,
+            "total_credits": total_credits
+        }
+    }
