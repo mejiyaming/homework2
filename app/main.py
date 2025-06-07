@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List
 
 app = FastAPI()
 
@@ -37,7 +37,7 @@ async def calculate_gpa(data: StudentData):
         total_points += grade_point * course.credits
         total_credits += course.credits
 
-    gpa = round(total_points / total_credits, 2) if total_credits else 0.0
+    gpa = round(total_points / total_credits + 1e-8, 3) if total_credits else 0.0
 
     return {
         "student_summary": {
