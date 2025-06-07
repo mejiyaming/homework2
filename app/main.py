@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
+from decimal import Decimal, ROUND_HALF_UP
 
 app = FastAPI()
 
@@ -37,7 +38,10 @@ async def calculate_gpa(data: StudentData):
         total_points += grade_point * course.credits
         total_credits += course.credits
 
-    gpa = round(total_points / total_credits + 1e-8, 3) if total_credits else 0.0
+    gpa = 0.0
+    if total_credits > 0:
+        raw_gpa = total_points / total_credits
+        gpa = float(Decimal(str(raw_gpa)).quantize(Decimal('0.001'), rounding=ROUND_HALF_UP))
 
     return {
         "student_summary": {
