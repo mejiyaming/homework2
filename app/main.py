@@ -41,7 +41,7 @@ async def calculate_gpa(data: StudentData):
     gpa = 0.0
     if total_credits > 0:
         raw_gpa = total_points / total_credits
-        gpa = float(Decimal(str(raw_gpa)).quantize(Decimal('0.001'), rounding=ROUND_HALF_UP))
+        gpa = float(Decimal(str(raw_gpa)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))  # <- 요기 바뀐 부분!
 
     return {
         "student_summary": {
