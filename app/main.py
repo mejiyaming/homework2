@@ -4,41 +4,47 @@ from typing import List
 
 app = FastAPI()
 
-class Subject(BaseModel):
-    name: str
-    credit: int
+# 점수 데이터를 받을 모델
+class GradeInput(BaseModel):
+    score: int
+    credit: int  # 지금은 사용하지 않지만 받아둠
+
+class GradesRequest(BaseModel):
+    grades: List[GradeInput]
+
+# 변환 결과 모델
+class GradeResult(BaseModel):
+    score: int
     grade: str
 
-class GPARequest(BaseModel):
-    subjects: List[Subject]
+class GradesResponse(BaseModel):
+    results: List[GradeResult]
 
-class GPAResponse(BaseModel):
-    gpa: float
+# 점수 → 등급 매핑 함수
+def convert_to_grade(score: int) -> str:
+    if score >= 95:
+        return "A+"
+    elif score >= 90:
+        return "A0"
+    elif score >= 85:
+        return "B+"
+    elif score >= 80:
+        return "B0"
+    elif score >= 75:
+        return "C+"
+    elif score >= 70:
+        return "C0"
+    elif score >= 65:
+        return "D+"
+    elif score >= 60:
+        return "D0"
+    else:
+        return "F"
 
-grade_to_point = {
-    "A+": 4.5,
-    "A0": 4.0,
-    "B+": 3.5,
-    "B0": 3.0,
-    "C+": 2.5,
-    "C0": 2.0,
-    "D+": 1.5,
-    "D0": 1.0,
-    "F": 0.0
-}
-
-@app.post("/calculate-gpa", response_model=GPAResponse)
-def calculate_gpa(data: GPARequest):
-    total_points = 0.0
-    total_credits = 0
-
-    for subject in data.subjects:
-        point = grade_to_point.get(subject.grade.upper(), 0.0)
-        total_points += point * subject.credit
-        total_credits += subject.credit
-
-    if total_credits == 0:
-        return {"gpa": 0.0}
-
-    gpa = total_points / total_credits
-    return {"gpa": round(gpa, 2)}
+@app.post("/grades", response_model=GradesResponse)
+def get_grades(data: GradesRequest):
+    results = []
+    for item in data.grades:
+        grade = convert_to_grade(item.score)
+        results.append({"score": item.score, "grade": grade})
+    return {"results": results}
